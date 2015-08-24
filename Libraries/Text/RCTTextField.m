@@ -65,7 +65,7 @@
   
   if (text.length > maxLength && ![self isIMETyping:self]) {
     self.text = [text substringToIndex:[_maxLength unsignedIntegerValue]];
-    [self _textFieldDidChange];
+    [self textFieldDidChange];
   }
 }
 
