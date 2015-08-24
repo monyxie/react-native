@@ -31,27 +31,7 @@ RCT_EXPORT_MODULE()
 
 - (BOOL)textField:(RCTTextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
 {
-  if (textField.maxLength == nil || [string isEqualToString:@"\n"]) {  // Make sure forms can be submitted via return
-    return YES;
-  }
-  NSUInteger allowedLength = textField.maxLength.integerValue - textField.text.length + range.length;
-  if (string.length > allowedLength) {
-    if (string.length > 1) {
-      // Truncate the input string so the result is exactly maxLength
-      NSString *limitedString = [string substringToIndex:allowedLength];
-      NSMutableString *newString = textField.text.mutableCopy;
-      [newString replaceCharactersInRange:range withString:limitedString];
-      textField.text = newString;
-      // Collapse selection at end of insert to match normal paste behavior
-      UITextPosition *insertEnd = [textField positionFromPosition:textField.beginningOfDocument
-                                                          offset:(range.location + allowedLength)];
-      textField.selectedTextRange = [textField textRangeFromPosition:insertEnd toPosition:insertEnd];
-      [textField textFieldDidChange];
-    }
-    return NO;
-  } else {
-    return YES;
-  }
+  return YES;
 }
 
 RCT_EXPORT_VIEW_PROPERTY(caretHidden, BOOL)

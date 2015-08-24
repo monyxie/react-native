@@ -32,8 +32,46 @@
     [self addTarget:self action:@selector(textFieldEndEditing) forControlEvents:UIControlEventEditingDidEnd];
     [self addTarget:self action:@selector(textFieldSubmitEditing) forControlEvents:UIControlEventEditingDidEndOnExit];
     _reactSubviews = [NSMutableArray new];
+    self.delegate = self;
+    
+    [self addTarget:self action:@selector(handleTextChanged:) forControlEvents:UIControlEventEditingChanged];
   }
   return self;
+}
+
+- (BOOL)isIMETyping:(UITextField *)textField
+{
+  // 键盘输入模式
+  // TODO replace the depricated api
+  NSString *inputMode = [[UITextInputMode currentInputMode] primaryLanguage];
+  // 目前只处理简体中文
+  if ([inputMode isEqualToString:@"zh-Hans"]) {
+    UITextRange *selectedRange = [textField markedTextRange];
+    // 获取高亮部分
+    UITextPosition *position = [textField positionFromPosition:selectedRange.start offset:0];
+    if (position) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
+- (void)handleTextChanged:(NSNotification *)obj
+{
+  if (_maxLength == nil) return;
+  
+  NSString *text = self.text;
+  NSUInteger maxLength = _maxLength.integerValue;
+  
+  if (text.length > maxLength && ![self isIMETyping:self]) {
+    self.text = [text substringToIndex:[_maxLength unsignedIntegerValue]];
+    [self _textFieldDidChange];
+  }
+}
+
+- (void)dealloc
+{
+  [[NSNotificationCenter defaultCenter]removeObserver:self name:@"UITextViewTextDidChangeNotification" object:self];
 }
 
 RCT_NOT_IMPLEMENTED(- (instancetype)initWithFrame:(CGRect)frame)
