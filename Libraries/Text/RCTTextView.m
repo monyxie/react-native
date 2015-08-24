@@ -37,8 +37,49 @@
     _textView.backgroundColor = [UIColor clearColor];
     _textView.delegate = self;
     [self addSubview:_textView];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleTextChanged:) name:@"UITextViewTextDidChangeNotification" object:_textView];
   }
   return self;
+}
+
+- (BOOL)isIMETyping:(UITextView *)textView
+{
+  // 键盘输入模式
+  // TODO replace the depricated api
+  NSString *inputMode = [[UITextInputMode currentInputMode] primaryLanguage];
+  // 目前只处理简体中文
+  if ([inputMode isEqualToString:@"zh-Hans"]) {
+    UITextRange *selectedRange = [textView markedTextRange];
+    // 获取高亮部分
+    UITextPosition *position = [textView positionFromPosition:selectedRange.start offset:0];
+    if (position) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
+- (void)handleTextChanged:(NSNotification *)obj
+{
+  if (_maxLength == nil) return;
+  
+  UITextView *textView = (UITextView *)obj.object;
+  
+  NSString *text = textView.text;
+  NSUInteger maxLength = _maxLength.integerValue;
+
+  if (text.length > maxLength && ![self isIMETyping:textView]) {
+     textView.text = [text substringToIndex:[_maxLength unsignedIntegerValue]];
+     [self textViewDidChange:textView];
+  }
+}
+
+- (void)dealloc
+{
+  [[NSNotificationCenter defaultCenter]removeObserver:self
+                                                 name:@"UITextViewTextDidChangeNotification"
+                                               object:_textView];
 }
 
 RCT_NOT_IMPLEMENTED(-initWithFrame:(CGRect)frame)
@@ -127,27 +168,7 @@ RCT_NOT_IMPLEMENTED(-initWithCoder:(NSCoder *)aDecoder)
 
 - (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text
 {
-  if (_maxLength == nil) {
-    return YES;
-  }
-  NSUInteger allowedLength = _maxLength.integerValue - textView.text.length + range.length;
-  if (text.length > allowedLength) {
-    if (text.length > 1) {
-      // Truncate the input string so the result is exactly maxLength
-      NSString *limitedString = [text substringToIndex:allowedLength];
-      NSMutableString *newString = textView.text.mutableCopy;
-      [newString replaceCharactersInRange:range withString:limitedString];
-      textView.text = newString;
-      // Collapse selection at end of insert to match normal paste behavior
-      UITextPosition *insertEnd = [textView positionFromPosition:textView.beginningOfDocument
-                                                          offset:(range.location + allowedLength)];
-      textView.selectedTextRange = [textView textRangeFromPosition:insertEnd toPosition:insertEnd];
-      [self textViewDidChange:textView];
-    }
-    return NO;
-  } else {
-    return YES;
-  }
+  return YES;
 }
 
 - (void)setText:(NSString *)text
