@@ -64,7 +64,11 @@
   NSUInteger maxLength = _maxLength.integerValue;
   
   if (text.length > maxLength && ![self isIMETyping:self]) {
-    self.text = [text substringToIndex:[_maxLength unsignedIntegerValue]];
+    // [super setText] instead of [self setText], because we don't care about event lag
+    NSString *newText = [text substringToIndex:[_maxLength unsignedIntegerValue]];
+    UITextRange *selection = self.selectedTextRange;
+    [super setText:newText];
+    self.selectedTextRange = selection; // maintain cursor position/selection - this is robust to out of bounds
     [self textFieldDidChange];
   }
 }
